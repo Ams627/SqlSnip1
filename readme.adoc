@@ -169,3 +169,6 @@ public static DataTable RunStoredProcedureGetDataTable(string server, string dbN
 
 Any valid T-SQL can be passed to Sql Server, thus it is possible to run a stored procedure using `ExecuteNonQuery` or `ExectuteReader` by passing `EXEC STOREINFO 'Info messsage 1'` where `STOREINFO` is the name of a procedure taking a single string parameter.
 
+== Sql Parameters
+
+Parameters are represented by the `SqlParameter` type. 
