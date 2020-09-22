@@ -88,7 +88,84 @@ public static List<List<object>> GetResults(string server, string dbName, string
     }
     return list;
 }
-
 ----
 
 == Running some SQL and returning a Datatable
+
+A `DataTable` is a special C# type designed to contain database table. You need to add `using System.Data` in order to use it.
+
+[source,c#]
+----
+public static DataTable GetTable(string server, string dbName, string sql, SqlParameter[] sqlParams)
+{
+    var builder = new SqlConnectionStringBuilder
+    {
+        DataSource = server,
+        InitialCatalog = dbName,
+        IntegratedSecurity = true
+    };
+
+    using (var connection = new SqlConnection(builder.ToString()))
+    using (var command = new SqlCommand(sql, connection))
+    {
+        connection.Open();
+        command.Parameters.AddRange(sqlParams);
+        var adapter = new SqlDataAdapter(command);
+        var dataTable = new DataTable();
+        adapter.Fill(dataTable);
+        return dataTable;
+    }
+}
+----
+
+== Printing the contents of a `DataTable`
+
+We can print the contents of a `DataTable` by accessing its `Rows` property. Each row has the columns of the result in its `ItemsArray property`:
+
+[source,c#]
+----
+private static void TestGetTable()
+{
+    var table = GetTable(@"(localdb)\db1", "db1a", "select * from t1 where Name=@Name", new[] { new SqlParameter("Name", "One") });
+    foreach (DataRow row in table.Rows)
+    {
+        foreach (var col in row.ItemArray)
+        {
+            Console.WriteLine($"{col}");
+        }
+    }
+}
+----
+
+== Run a Stored Procedure
+
+Running a stored procedure is not much different to running a query. We simply initialise an `SqlCommand`  with the procedure name instead of some query text and set the `CommandType` of the `SqlCommand` to `CommandType.StoredProcedure`. Other than that, running a stored procedure is the same as running a query. The sample below shows how to run a stored procedure and return a `DataTable`.
+
+----
+public static DataTable RunStoredProcedureGetDataTable(string server, string dbName, string procname, SqlParameter[] sqlParams)
+{
+    var builder = new SqlConnectionStringBuilder
+    {
+        DataSource = server,
+        InitialCatalog = dbName,
+        IntegratedSecurity = true
+    };
+
+    using (var connection = new SqlConnection(builder.ToString()))
+    using (var command = new SqlCommand(procname, connection))
+    {
+        connection.Open();
+        command.CommandType = CommandType.StoredProcedure;
+        command.Parameters.AddRange(sqlParams);
+        var adapter = new SqlDataAdapter(command);
+        var dataTable = new DataTable();
+        adapter.Fill(dataTable);
+        return dataTable;
+    }
+}
+----
+
+== Run a stored procedure using `EXEC`
+
+Any valid T-SQL can be passed to Sql Server, thus it is possible to run a stored procedure using `ExecuteNonQuery` or `ExectuteReader` by passing `EXEC STOREINFO 'Info messsage 1'` where `STOREINFO` is the name of a procedure taking a single string parameter.
+
